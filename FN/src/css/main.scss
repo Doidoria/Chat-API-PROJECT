@@ -1,0 +1,153 @@
+@mixin flex-center-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+@mixin chat-bubble($bg-color) {
+    background-color: $bg-color;
+    padding: 12px 18px;
+    border-radius: 18px;
+    max-width: 60%;
+    margin-bottom: 15px;
+    line-height: 1.6;
+    color: #fff;
+    font-size: 16px;
+}
+
+.section_wrap {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+.inst_btn,
+.inst_btn>button {
+    @include flex-center-col;
+}
+
+.main_body_wrap {
+    display: flex;
+    // flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+
+    width: 720px;
+    height: 100%;
+    padding: 30px 0;
+    margin: 0 auto;
+
+    .chat_history_wrap {
+        flex-grow: 1;
+        width: 100%;
+        overflow-y: auto;
+        padding: 20px 0;
+
+        .chat_message {
+            display: flex;
+            width: 100%;
+            margin-bottom: 20px;
+
+            &>strong {
+                font-weight: bold;
+                margin-right: 10px;
+                min-width: 40px;
+                color: #BDBDBD;
+            }
+        }
+
+        .chat_user {
+            justify-content: flex-end;
+
+            &>strong {
+                order: 2;
+                margin-right: 0;
+                margin-left: 10px;
+            }
+
+            &>div {
+                @include chat-bubble(#4A4A4A);
+            }
+        }
+
+        .chat_ai {
+            justify-content: flex-start;
+
+            &>div {
+                @include chat-bubble(#333333);
+            }
+
+            &.loading {
+                opacity: 0.7;
+                font-style: italic;
+            }
+        }
+    }
+
+    .input_select_wrap {
+        width: 100%;
+        background-color: #1B1B1B;
+        border-radius: 20px;
+        padding: 30px 30px 15px 30px;
+        margin-bottom: 60px;
+        height: auto;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+
+        .inst_top_wrap {
+            flex-grow: 1;
+        }
+
+        .inst_label {
+            overflow: auto;
+            display: flex;
+            /* 중앙 정렬을 위한 flex 컨테이너 설정 */
+            align-items: center;
+            /* 수직 중앙 정렬 */
+            min-height: 50px;
+            flex-grow: 1;
+
+            &>textarea {
+                width: 100%;
+                min-height: 24px;
+                max-height: 500px;
+                border: none;
+                background-color: transparent;
+                color: #fff;
+                font-size: 15px;
+                font-weight: 400;
+                flex: 1;
+                overflow-y: auto;
+            }
+
+            & {
+                scrollbar-color: #3a3a3a transparent;
+            }
+        }
+
+        .inst_bottom_wrap {
+            display: flex;
+            gap: 20px;
+            padding: 5px 10px;
+            justify-content: space-between;
+            align-items: center;
+
+            .right_btn_wrap {
+                display: flex;
+                gap: 15px;
+            }
+        }
+    }
+}
+
+.inst_btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 5px;
+
+    &:hover {
+        background-color: #3a3a3a;
+    }
+}

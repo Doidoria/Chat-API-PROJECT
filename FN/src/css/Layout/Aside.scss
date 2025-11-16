@@ -1,0 +1,96 @@
+// fileName: Aside.scss (채팅 목록 스타일 추가 반영)
+.side_menu_wrap {
+    width: 250px; // ⭐️ 너비를 넓혀 제목이 보이도록 수정
+    height: 100vh;
+    background-color: #1C1C1C;
+    z-index: 1001;
+    position: absolute;
+
+    .menu_wrap {
+        width: 100%;
+        height: 100%;
+        padding: 60px 0 0 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+
+        .menu_top_wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 10px; // 간격 조정
+            padding: 10px 0; // 목록 상하 패딩 추가
+            width: 100%; // 너비 100% 사용
+
+            // 채팅방 목록을 위한 스크롤 추가
+            &.chat_list_container {
+                overflow-y: auto;
+                flex-grow: 1; // 남은 공간 차지
+                padding-left: 5px;
+            }
+        }
+
+        .btn_select_wrap {
+            display: flex;
+            width: 90%; // 메뉴바 너비에 맞춤
+            justify-content: flex-start;
+            align-items: center;
+            padding: 8px 10px;
+            border-radius: 5px;
+
+            & > p {
+                display: block; // 채팅방 제목 표시
+                color: #BDBDBD;
+                font-size: 14px;
+                margin-left: 10px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            // 활성화된 채팅방
+            &.active {
+                background-color: #3a3a3a;
+                & > p {
+                    color: #fff;
+                }
+            }
+
+            // hover 상태
+            &:hover {
+                background-color: #3a3a3a;
+            }
+        }
+
+        .btn_wrap {
+            width: 32px; // 아이콘 크기 통일
+            height: 32px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            // hover 상태
+            &:hover {
+                background-color: #3a3a3a;
+            }
+        }
+
+        .menu_bottom_wrap {
+            // 하단 버튼들은 텍스트 없이 아이콘만 사용하는 스타일로 유지
+            .btn_wrap {
+                width: 30px;
+                height: 30px;
+            }
+            
+            .btn_select_wrap {
+                margin: 0 0 10px 0;
+                width: 90%;
+                justify-content: center; // 중앙 정렬로 되돌림
+                & > p {
+                    display: none; // 하단 버튼의 텍스트는 다시 숨김
+                }
+            }
+        }
+    }
+}
