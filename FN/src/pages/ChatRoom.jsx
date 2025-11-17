@@ -8,6 +8,7 @@ const CHAT_API_URL = 'http://localhost:3001/api/chat';
 
 const ChatRoom = () => {
     const { id: urlChatId } = useParams();
+    const scrollRef = useRef(null); // 스크롤 영역
 
     const {
         activeChatId, // Context의 activeChatId는 현재 URL ID와 같다고 가정
@@ -112,11 +113,21 @@ const ChatRoom = () => {
         ));
     };
 
+    // 자동 스크롤
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTo({
+                top: scrollRef.current.scrollHeight,
+                behavior: "smooth"
+            });
+        }
+    }, [currentChats, loading]);
+
     return (
         <section className="section_wrap">
             <div className="main_body_wrap">
                 {/* 챗 기록을 여기서 보여줍니다. */}
-                <div className="chat_history_wrap">
+                <div className="chat_history_wrap" ref={scrollRef}>
                     {renderChats()}
                 </div>
 

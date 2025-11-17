@@ -1,50 +1,58 @@
-const { OpenAI } = require('openai');
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
-
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const { OpenAI } = require('openai');
 
 const app = express();
-const port = 3001;
+const PORT = process.env.PORT || 3001;
 
-app.use(cors()); // CORS 활성화
-app.use(express.json()); // JSON 형태의 요청 본문(body)을 파싱할 수 있게 설정
+app.use(cors());
+app.use(express.json());
 
-// 기본적인 테스트 API
+const client = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+});
+
+// 기본 테스트 API
 app.get('/', (req, res) => {
     res.send('AI Server is running!');
 });
 
-// AI 응답 처리 API (여기에 실제 로직을 추가)
+// 채팅 응답 API
 app.post('/api/chat', async (req, res) => {
-    // 1. 프론트엔드에서 보낸 메시지 받기
-    const userInput = req.body.message;
-
-    if (!userInput) {
-        return res.status(400).json({ error: '메시지를 입력해주세요.' });
-    }
-    
     try {
-        // 2. OpenAI API 호출
-        const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo", // 사용하려는 모델 지정
-            messages: [{ 
-                role: "user", 
-                content: userInput 
-            }],
+        const messages = req.body.messages;
+
+        if (!messages || !Array.isArray(messages)) {
+            return res.status(400).json({ error: "messages 배열이 필요합니다." });
+        }
+
+        const completion = await client.chat.completions.create({
+            model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+            messages: messages
         });
 
-        // 3. API 응답에서 텍스트 추출
         const aiResponse = completion.choices[0].message.content;
 
-        // 4. 프론트엔드로 응답 전송
         res.json({ response: aiResponse });
 
     } catch (error) {
-        console.error("OpenAI API 호출 에러:", error);
-        res.status(500).json({ error: "AI 서버 응답 중 오류가 발생했습니다." });
+        console.error("❌ OpenAI API 오류:", error);
+        
+        if (error.status === 401) {
+            return res.status(401).json({
+                error: "OpenAI 인증 오류. API 키를 확인해주세요."
+            });
+        }
+
+        res.status(500).json({
+            error: "서버 내부 오류 발생",
+            info: error.message
+        });
     }
+});
+
+// 서버 시작
+app.listen(PORT, () => {
+    console.log(`🚀 AI Server Running on http://localhost:${PORT}`);
 });

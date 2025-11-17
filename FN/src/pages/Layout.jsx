@@ -1,14 +1,28 @@
 import { Outlet } from "react-router-dom";
-import { useState } from 'react';
-import Aside from './Layout/Aside'
-import Header from './Layout/Header'
-import Footer from './Layout/Footer'
-import '../css/Layout.scss'
+import { useState, useEffect } from 'react';
+import Aside from './Layout/Aside';
+import Header from './Layout/Header';
+import Footer from './Layout/Footer';
+import '../css/Layout.scss';
 
 const Layout = ({ children }) => {
   const [activeChatId, setActiveChatId] = useState(null);
-  const [chatRooms, setChatRooms] = useState({}); // 채팅방
-  const [isCollapsed, setIsCollapsed] = useState(false); // 사이드바 접힘 상태
+  const [chatRooms, setChatRooms] = useState({});
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  /* 앱 로드 시 LocalStorage 불러오기 */
+  useEffect(() => {
+    const saved = localStorage.getItem("chatRooms");
+    if (saved) {
+        const parsed = JSON.parse(saved);
+        setChatRooms(parsed);
+    }
+  }, []);
+
+  /* chatRooms 바뀔 때마다 자동 저장 */
+  useEffect(() => {
+    localStorage.setItem("chatRooms", JSON.stringify(chatRooms));
+  }, [chatRooms]);
 
   const chatProps = {
     activeChatId,
@@ -28,9 +42,10 @@ const Layout = ({ children }) => {
           <Outlet context={chatProps} />
           {children}
         </main>
+        <Footer />
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Layout
+export default Layout;

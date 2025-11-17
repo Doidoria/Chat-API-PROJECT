@@ -25,10 +25,19 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     width: 720px;
     margin: 0 auto;
     padding: 30px 0;
     height: 100%;
+
+    .material-symbols-outlined {
+        font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 20
+    }
 
     .chat_history_wrap {
         width: 100%;
@@ -40,7 +49,7 @@
             width: 100%;
             margin-bottom: 20px;
 
-            & > strong {
+            &>strong {
                 font-weight: bold;
                 margin-right: 10px;
                 color: var(--text-secondary);
@@ -50,13 +59,13 @@
         .chat_user {
             justify-content: flex-end;
 
-            & > strong {
+            &>strong {
                 order: 2;
                 margin-left: 10px;
                 margin-right: 0;
             }
 
-            & > div {
+            &>div {
                 @include chat-bubble(var(--bubble-user));
                 color: var(--text-primary);
             }
@@ -65,7 +74,7 @@
         .chat_ai {
             justify-content: flex-start;
 
-            & > div {
+            &>div {
                 @include chat-bubble(var(--bubble-ai));
                 color: var(--text-primary);
             }
@@ -81,7 +90,7 @@
         width: 100%;
         background-color: var(--bg-sub);
         border-radius: 20px;
-        padding: 30px;
+        padding: 30px 30px 20px 30px;
         margin-bottom: 30px;
         display: flex;
         flex-direction: column;
@@ -96,7 +105,7 @@
             min-height: 50px;
             align-items: center;
 
-            & > textarea {
+            &>textarea {
                 width: 100%;
                 min-height: 24px;
                 max-height: 500px;
@@ -124,17 +133,52 @@
                 display: flex;
                 gap: 15px;
             }
+
+            .inst_btn {
+                width: 30px;
+                height: 30px;
+                border-radius: 8px;
+                background: transparent;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background-color 0.15s ease;
+
+                @mixin btn-style{
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;  
+                    color: var(--btn-bg);
+                    border-radius: 5px;
+                    border: none;
+                }
+
+                .fileupload_btn{
+                    @include btn-style;
+                    padding: 1px;
+                    background: transparent;
+                }
+                
+                .submit_btn{
+                    @include btn-style;
+                    padding: 2px;
+                    background-color: var(--submit-btn);
+                }
+
+                &:hover {
+                    background-color: rgba(255, 255, 255, 0.08);
+                }
+
+                img {
+                    opacity: 0.85;
+                    transition: opacity 0.2s ease;
+                    width: 16px;
+                }
+
+                &:hover img {
+                    opacity: 1;
+                }
+            }
         }
-    }
-}
-
-.inst_btn {
-    width: 30px;
-    height: 30px;
-    border-radius: 5px;
-    @include flex-center-col;
-
-    &:hover {
-        background-color: var(--aside-hover);
     }
 }

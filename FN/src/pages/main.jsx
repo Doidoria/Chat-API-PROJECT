@@ -31,7 +31,8 @@ const Home = () => {
 
         const updatedHistoryBeforeAI = [{ role: 'user', content: userMessage }];
 
-        setChatRooms(prevRooms => ({...prevRooms,
+        setChatRooms(prevRooms => ({
+            ...prevRooms,
             [chatId]: {
                 title: userMessage.substring(0, 30) + '...',
                 history: updatedHistoryBeforeAI.concat({ role: 'ai', content: '응답 생성 중...', loading: true }),
@@ -48,13 +49,13 @@ const Home = () => {
 
             setChatRooms(prevRooms => {
                 const finalHistory = updatedHistoryBeforeAI.concat({ role: 'ai', content: aiResponse });
-                return {...prevRooms, [chatId]: {...prevRooms[chatId], history: finalHistory,}};
+                return { ...prevRooms, [chatId]: { ...prevRooms[chatId], history: finalHistory, } };
             });
         } catch (error) {
             console.error('API 통신 오류:', error);
             setChatRooms(prevRooms => {
                 const historyWithError = updatedHistoryBeforeAI.concat({ role: 'ai', content: '오류 발생: 응답 불가.', error: true });
-                return {...prevRooms,[chatId]: {...prevRooms[chatId],history: historyWithError,}};
+                return { ...prevRooms, [chatId]: { ...prevRooms[chatId], history: historyWithError, } };
             });
         } finally {
             setLoading(false);
@@ -91,14 +92,14 @@ const Home = () => {
                         <div className="inst_bottom_wrap">
                             <div className="left_btn_wrap">
                                 <div className="inst_btn">
-                                    <button shape="circle" type="button" style={{ cursor: 'pointer' }}>
+                                    <button shape="circle" type="button" className='fileupload_btn' style={{ cursor: 'pointer' }}>
                                         <span className="material-symbols-outlined">add</span>
                                     </button>
                                 </div>
                             </div>
                             <div className="right_btn_wrap">
                                 <div className="inst_btn">
-                                    <button shape="circle" type="submit" style={{ cursor: 'pointer' }}
+                                    <button shape="circle" type="submit" className='submit_btn' style={{ cursor: 'pointer' }}
                                         disabled={!message.trim() || loading}>
                                         <span className="material-symbols-outlined">upload_2</span>
                                     </button>
