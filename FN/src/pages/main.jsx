@@ -1,8 +1,16 @@
+// src/pages/main.jsx
 import '../css/main.scss';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import useAutosizeTextarea from '../component/useAutosizeTextarea';
 import axios from 'axios';
+
+// 제목 자동 생성 함수 (ChatRoom과 동일 규칙)
+const generateChatTitle = (text) => {
+    const first = text.split('\n')[0].trim();
+    if (!first) return '새 채팅';
+    return first.length > 30 ? first.slice(0, 30) + '…' : first;
+};
 
 const CHAT_API_URL = 'http://localhost:3001/api/chat';
 
@@ -11,15 +19,17 @@ const Home = () => {
         activeChatId,
         setActiveChatId,
         chatRooms,
-        setChatRooms
+        setChatRooms,
     } = useOutletContext();
 
     const navigate = useNavigate();
+    const textareaRef = useRef(null);
+
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
-    const textareaRef = useRef(null);
     const [files, setFiles] = useState([]);
     const [isDragging, setIsDragging] = useState(false);
+    const [previewImage, setPreviewImage] = useState(null);
 
     useAutosizeTextarea(textareaRef, message);
 
@@ -27,150 +37,234 @@ const Home = () => {
         setMessage(e.target.value);
     }, []);
 
-    const sendMessage = async (userMessage, chatId) => {
-        setLoading(true);
-
-        const updatedHistoryBeforeAI = [{ role: 'user', content: userMessage }];
-
-        setChatRooms(prevRooms => ({
-            ...prevRooms,
-            [chatId]: {
-                title: userMessage.substring(0, 30) + '...',
-                history: updatedHistoryBeforeAI.concat({ role: 'ai', content: '응답 생성 중...', loading: true }),
-            }
-        }));
-
-        setActiveChatId(chatId);
-
-        try {
-            const response = await axios.post(CHAT_API_URL, {
-                messages: updatedHistoryBeforeAI,
-            });
-            const aiResponse = response.data.response;
-
-            setChatRooms(prevRooms => {
-                const finalHistory = updatedHistoryBeforeAI.concat({ role: 'ai', content: aiResponse });
-                return { ...prevRooms, [chatId]: { ...prevRooms[chatId], history: finalHistory, } };
-            });
-        } catch (error) {
-            console.error('API 통신 오류:', error);
-            setChatRooms(prevRooms => {
-                const historyWithError = updatedHistoryBeforeAI.concat({ role: 'ai', content: '오류 발생: 응답 불가.', error: true });
-                return { ...prevRooms, [chatId]: { ...prevRooms[chatId], history: historyWithError, } };
-            });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // ChatRoom 전달
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (!message.trim() || loading) return;
-
-        const userMessage = message.trim();
-        const chatId = Date.now().toString();
-
-        setMessage('');
-        sendMessage(userMessage, chatId);
-        navigate(`/chat/${chatId}`, {
-            state: {
-                initialFiles: files   // ChatRoom으로 파일 전달
-            }
-        });
-    };
-
+    // 파일 업로드 핸들러
     const handleFileUpload = (e) => {
-        const newFiles = Array.from(e.target.files);
-        const filtered = newFiles.filter(file => {
+        const selected = Array.from(e.target.files || []);
+        const filtered = selected.filter((file) => {
             if (file.size > 5 * 1024 * 1024) {
                 alert(`${file.name} 은(는) 5MB를 초과했습니다.`);
                 return false;
             }
             return true;
         });
-
-        setFiles(prev => [...prev, ...filtered]);
+        setFiles((prev) => [...prev, ...filtered]);
     };
 
     const removeFile = (index) => {
-        setFiles(prev => prev.filter((_, i) => i !== index));
+        setFiles((prev) => prev.filter((_, i) => i !== index));
     };
 
     const handleKeyDown = (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
+        // Enter → 전송 / Shift+Enter → 줄바꿈
+        if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSubmit(e);
         }
     };
 
+    // --- 새 채팅 생성 + 전송 ---
+    const sendMessage = async (userMessage, chatId) => {
+        setLoading(true);
+
+        const newHistory = [{ role: 'user', content: userMessage }];
+
+        // ▼ title 오타(ttitle) → title로 수정함
+        setChatRooms((prev) => ({
+            ...prev,
+            [chatId]: {
+                title: generateChatTitle(userMessage),
+                history: [
+                    ...newHistory,
+                    {
+                        role: 'ai',
+                        content: '응답 생성 중...',
+                        loading: true,
+                    },
+                ],
+            },
+        }));
+
+        setActiveChatId(chatId);
+
+        try {
+            const response = await axios.post(CHAT_API_URL, {
+                messages: newHistory,
+            });
+
+            const aiResponse = response.data?.response || '';
+
+            setChatRooms((prev) => {
+                const finalHistory = [
+                    ...newHistory,
+                    {
+                        role: 'ai',
+                        content: aiResponse,
+                        loading: false,
+                    },
+                ];
+
+                return {
+                    ...prev,
+                    [chatId]: {
+                        ...prev[chatId],
+                        history: finalHistory,
+                    },
+                };
+            });
+        } catch (err) {
+            console.error('API 오류:', err);
+
+            setChatRooms((prev) => ({
+                ...prev,
+                [chatId]: {
+                    ...prev[chatId],
+                    history: [
+                        ...newHistory,
+                        {
+                            role: 'ai',
+                            content: '❌ 오류 발생: 응답을 가져올 수 없습니다.',
+                            error: true,
+                            loading: false,
+                        },
+                    ],
+                },
+            }));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // --- 폼 submit ---
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (loading) return;
+        if (!message.trim()) return;
+
+        const chatId = Date.now().toString();
+        const userMessage = message.trim();
+
+        setMessage('');
+
+        // ChatRoom으로 파일 전달
+        navigate(`/chat/${chatId}`, {
+            state: {
+                initialFiles: files,
+            },
+        });
+
+        setFiles([]);
+
+        sendMessage(userMessage, chatId);
+    };
+
     return (
         <section className="section_wrap">
             <div className="main_body_wrap">
-                <div className='logo' style={{ marginBottom: '5px' }}>
+                <div className="logo" style={{ marginBottom: '5px' }}>
                     <h1>DoAi</h1>
                 </div>
-                <div className={`input_select_wrap ${isDragging ? "dragging" : ""}`}
-                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+
+                {/* 드래그 영역 */}
+                <div
+                    className={`input_select_wrap ${isDragging ? 'dragging' : ''}`}
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        setIsDragging(true);
+                    }}
                     onDragLeave={() => setIsDragging(false)}
                     onDrop={(e) => {
                         e.preventDefault();
                         setIsDragging(false);
-                        const newFiles = Array.from(e.dataTransfer.files);
-                        newFiles.forEach(file => {
+
+                        const dropped = Array.from(e.dataTransfer.files || []);
+                        const filtered = dropped.filter((file) => {
                             if (file.size > 5 * 1024 * 1024) {
-                                alert("5MB 이하 파일만 업로드할 수 있습니다.");
-                                return;
+                                alert('5MB 이하의 파일만 업로드할 수 있습니다.');
+                                return false;
                             }
+                            return true;
                         });
-                        setFiles(prev => [...prev, ...newFiles]);
-                    }}>
+                        setFiles((prev) => [...prev, ...filtered]);
+                    }}
+                >
                     {/* 파일 미리보기 */}
                     {files.length > 0 && (
                         <div className="file_preview_area">
                             {files.map((file, idx) => {
-                                const isImage = file.type.startsWith("image/");
+                                const isImage = file.type.startsWith('image/');
                                 const previewURL = isImage ? URL.createObjectURL(file) : null;
+
                                 const type = file.type;
-                                let icon = "/images/icon_file.png";
-                                if (type.includes("pdf")) icon = "/images/icon_pdf.png";
-                                else if (type.includes("word") || type.includes("msword") || type.includes("doc"))
-                                    icon = "/images/icon_doc.png";
-                                else if (type.includes("excel") || type.includes("spreadsheet") || type.includes("xls"))
-                                    icon = "/images/icon_excel.png";
-                                else if (type.includes("hwp"))
-                                    icon = "/images/icon_hwp.png";
+                                let icon = '/images/icon_file.png';
+                                if (type.includes('pdf')) icon = '/images/icon_pdf.png';
+                                else if (
+                                    type.includes('word') ||
+                                    type.includes('msword') ||
+                                    type.includes('doc')
+                                )
+                                    icon = '/images/icon_doc.png';
+                                else if (
+                                    type.includes('excel') ||
+                                    type.includes('spreadsheet') ||
+                                    type.includes('xls')
+                                )
+                                    icon = '/images/icon_excel.png';
+                                else if (type.includes('hwp')) icon = '/images/icon_hwp.png';
+
                                 return (
                                     <div className="file_item" key={idx}>
                                         {isImage ? (
-                                            <img className="thumb" src={previewURL} alt={file.name} />
+                                            <img
+                                                className="thumb"
+                                                src={previewURL}
+                                                alt={file.name}
+                                                onClick={() => setPreviewImage(previewURL)}
+                                                style={{ cursor: 'pointer' }}
+                                            />
                                         ) : (
-                                            <img className="file_icon" src={icon} alt="file icon" />
+                                            <img
+                                                className="file_icon"
+                                                src={icon}
+                                                alt="file icon"
+                                            />
                                         )}
-                                        <span>{file.name}</span>
-                                        <button onClick={() => removeFile(idx)}>×</button>
+
+                                        <span className="file_name">{file.name}</span>
+                                        <button
+                                            type="button"
+                                            className="file_remove_btn"
+                                            onClick={() => removeFile(idx)}
+                                        >
+                                            ×
+                                        </button>
                                     </div>
                                 );
                             })}
                         </div>
                     )}
+
+                    {/* 입력창 */}
                     <form onSubmit={handleSubmit}>
                         <div className="input_row">
-                            {/* 파일 업로드 버튼 */}
+                            {/* 파일 추가 버튼 */}
                             <label className="add_btn">
                                 <span className="material-symbols-outlined">attach_file</span>
-                                <input type="file" multiple style={{ display: "none" }} onChange={handleFileUpload} />
+                                <input
+                                    type="file"
+                                    multiple
+                                    style={{ display: 'none' }}
+                                    onChange={handleFileUpload}
+                                />
                             </label>
 
-                            {/* 입력창 */}
+                            {/* 텍스트 입력 */}
                             <textarea
                                 name="message"
-                                ref={textareaRef}
                                 value={message}
+                                ref={textareaRef}
                                 onChange={handleInputChange}
                                 onKeyDown={handleKeyDown}
-                                placeholder="적당히 물어봐주세요."
-                                style={{ resize: "none" }}
+                                placeholder="적당히 물어보세요."
                             />
 
                             {/* 전송 버튼 */}
@@ -185,8 +279,23 @@ const Home = () => {
                     </form>
                 </div>
             </div>
+
+            {/* 이미지 미리보기 모달 */}
+            {previewImage && (
+                <div
+                    className="image_modal_dim"
+                    onClick={() => setPreviewImage(null)}
+                >
+                    <div
+                        className="image_modal_wrap"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <img src={previewImage} alt="미리보기" />
+                    </div>
+                </div>
+            )}
         </section>
-    )
-}
+    );
+};
 
 export default Home;

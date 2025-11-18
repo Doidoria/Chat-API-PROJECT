@@ -81,25 +81,38 @@
         }
 
         p {
-            color: var(--text-secondary);
+            flex: 1;
+            min-width: 0;
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 14px;
             white-space: nowrap;
+            color: var(--text-secondary);
             transition: opacity 0.25s ease;
         }
-        
+
     }
-    .settings{
+
+    .settings {
         display: flex;
         justify-content: center;
         width: 40px;
         color: var(--btn-bg);
 
-        span{
+        span {
             font-size: 25px;
         }
     }
 
     /* 접힌 상태 전용 스타일 */
     &.collapsed {
+        .chat_list_container {
+            .chat_title {
+                display: none;
+            }
+        }
+
         p {
             opacity: 0;
             pointer-events: none;
@@ -108,6 +121,10 @@
 
     /* 펼친 상태에서는 원래대로 */
     &.expanded {
+        .btn_wrap {
+            padding-left: 0;
+        }
+
         p {
             opacity: 1;
         }
