@@ -18,27 +18,27 @@
     overflow-y: auto;
 }
 
-/* Chrome, Edge, Safari */
+/* Chrome / Edge */
 ::-webkit-scrollbar {
-  width: 8px;       /* 스크롤바 너비 */
-  height: 8px;      /* 가로 스크롤 바 */
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent; 
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--scrollbar-thumb);
   border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.2) transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }

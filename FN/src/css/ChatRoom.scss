@@ -38,7 +38,6 @@
     .chat_summary_fixed {
         position: fixed;
         top: 55px;
-        /* Header 바로 아래 */
         right: 40px;
         z-index: 3000;
 
@@ -75,6 +74,32 @@
         margin: 0 auto;
         padding: 0 12px;
 
+        /* ============ 스크롤 맨 아래로 버튼 ============ */
+        .scroll_down_btn {
+            position: fixed;
+            bottom: 100px;
+            right: 40px;
+            z-index: 9999;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.12);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+
+            .material-symbols-outlined {
+                font-size: 28px;
+                color: var(--text-primary);
+            }
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.22);
+            }
+        }
+
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
         }
@@ -109,79 +134,69 @@
         }
 
         /* 대화 영역 */
+        /* ======================= ChatGPT 스타일 채팅 영역 ======================= */
         .chat_history_wrap {
             width: 100%;
             flex-grow: 1;
             overflow-y: auto;
-            padding-right: 5px;
-            margin-bottom: 10px;
-            scrollbar-gutter: stable both-edges;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
 
+
+            /* 각 메시지 */
             .chat_message {
-                display: flex;
                 width: 100%;
-                margin-bottom: 18px;
-                font-size: 15px;
+                display: flex;
+                max-width: 780px;
+                padding: 0 10px;
 
+                /* 이름 숨김 */
                 strong {
-                    font-weight: 600;
-                    margin-right: 10px;
-                    color: var(--text-secondary);
+                    display: none;
                 }
 
                 .bubble {
+                    max-width: 720px;
+                    padding: 15px 20px;
+                    border-radius: 12px;
+                    line-height: 1.6;
+                    font-size: 15px;
                     word-break: break-word;
+                    white-space: pre-wrap;
                 }
             }
 
-            /* ============== USER 메시지 ============== */
+            /* USER (오른쪽 정렬) */
             .chat_user {
                 justify-content: flex-end;
 
-                strong {
-                    order: 2;
-                    margin-left: 10px;
-                    margin-right: 0;
-                }
-
-                /* ★ user 버블 색상 테마 적용 */
                 .bubble {
-                    background-color: var(--bubble-user);
+                    background: var(--submit-btn);
                     color: var(--text-primary);
+                    text-align: left;
                 }
             }
 
-            /* ============== AI 메시지 ============== */
+            /* AI (왼쪽 정렬) */
             .chat_ai {
                 justify-content: flex-start;
 
-                /* ★ 기존 chat-bubble 스펙 유지하면서 색상 테마 & ChatGPT 스타일 적용 */
                 .bubble {
-                    @include chat-bubble(var(--bubble-ai));
+                    background: var(--bubble-ai);
                     color: var(--text-primary);
-
-                    /* ★ ChatGPT 스타일 버블 개선 */
-                    border-radius: 12px;
-                    padding: 14px 17px;
-                    line-height: 1.65;
-
-                    /* subtle shadow */
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    /* ChatGPT 느낌 */
                     box-shadow:
-                        0 1px 4px rgba(0, 0, 0, 0.25),
-                        0 0 0 1px rgba(255, 255, 255, 0.05);
+                        0px 1px 3px rgba(0, 0, 0, 0.2),
+                        0 0 0 1px rgba(255, 255, 255, 0.06);
                 }
 
                 &.loading {
                     opacity: 0.7;
-                    font-style: italic;
                 }
-            }
-
-            .empty_state {
-                color: var(--text-secondary);
-                font-size: 14px;
-                text-align: center;
-                margin-top: 20px;
             }
         }
 
@@ -444,41 +459,6 @@
     }
 }
 
-/* ============ 스크롤 맨 아래로 버튼 ============ */
-.scroll_down_btn {
-    position: fixed;
-    bottom: 110px;
-    right: 40px;
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    border: none;
-    background: rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(6px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    opacity: 1;
-    visibility: visible;
-    z-index: 3500;
-    pointer-events: auto;
-    color: var(--text-primary);
-    visibility: visible;
-
-    .material-symbols-outlined {
-        font-size: 24px;
-    }
-
-    &:hover {
-        background: rgba(255, 255, 255, 0.22);
-    }
-
-    &:active {
-        transform: scale(0.95);
-    }
-}
-
 /* ============ 이미지 미리보기 모달 ============ */
 .image_modal_dim {
     position: fixed;
@@ -499,5 +479,42 @@
         max-height: 90vh;
         border-radius: 12px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    }
+}
+
+.chat_image_preview {
+    max-width: 260px;
+    border-radius: 12px;
+    margin: 6px 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+}
+
+// 파일 다운로드
+.file_download_wrap {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-input);
+    padding: 10px 12px;
+    border-radius: 12px;
+    margin: 6px 0;
+
+    .file_name {
+        color: var(--text-primary);
+        margin-bottom: 4px;
+        font-size: 13px;
+    }
+
+    .file_download_btn {
+        padding: 6px 8px;
+        background: var(--submit-btn);
+        color: #fff;
+        border-radius: 6px;
+        font-size: 12px;
+        text-align: center;
+        text-decoration: none;
+
+        &:hover {
+            opacity: 0.9;
+        }
     }
 }

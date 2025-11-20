@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Aside from './Layout/Aside';
 import Header from './Layout/Header';
 import Footer from './Layout/Footer';
@@ -11,6 +11,7 @@ const Layout = () => {
   const [chatRooms, setChatRooms] = useState({});
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showSettingModal, setShowSettingModal] = useState(false);
+  const scrollAreaRef = useRef(null);
 
   /* 앱 로드 시 LocalStorage 불러오기 */
   useEffect(() => {
@@ -34,7 +35,8 @@ const Layout = () => {
     isCollapsed,
     setIsCollapsed,
     showSettingModal,
-    setShowSettingModal
+    setShowSettingModal,
+    scrollAreaRef
   };
 
   return (
@@ -42,7 +44,7 @@ const Layout = () => {
       <Aside {...chatProps} />
       <div className="content_wrap">
         <Header isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
-        <main className="main">
+        <main className="main" ref={scrollAreaRef}>
           <Outlet context={chatProps} />
         </main>
         <Footer />

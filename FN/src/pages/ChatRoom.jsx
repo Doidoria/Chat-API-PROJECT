@@ -21,24 +21,42 @@ const extractFirstUrl = (text) => {
     return match ? match[0] : null;
 };
 
-/* 코드블록 및 일반 텍스트 파싱 (복사 버튼 포함) */
+// 자동 언어 감지
+const detectLanguage = (codeText) => {
+    const sample = codeText.trim();
+
+    if (/class\s+\w+|public\s+static|System\.out/.test(sample)) return "java";
+    if (/def\s+\w+|import\s+\w+|print\(/.test(sample)) return "python";
+    if (/function\s+\w+|const\s+\w+|let\s+\w+|=>/.test(sample)) return "javascript";
+    if (/<[a-z]+[^>]*>/i.test(sample)) return "html";
+    if (/{[\s\S]*}/.test(sample) && sample.includes(":")) return "json";
+    if (/\.[a-z\-]+\s*\{/.test(sample)) return "css";
+    if (/^\$[\w]/.test(sample)) return "bash";
+
+    return "code"; // fallback
+};
+
+// 코드블럭 + 일반텍스트 파싱
 const renderRichText = (text, onCopyCode) => {
     if (!text) return null;
+
     const parts = text.split(/```/);
 
     return parts.map((part, idx) => {
-        // 홀수 index: 코드블록
+        // 홀수 index = 코드블럭
         if (idx % 2 === 1) {
             const lines = part.split('\n');
             const first = lines[0]?.trim();
+
+            // ```js 처럼 언어 지정한 경우
             const isLang = /^[a-zA-Z0-9_\-#+]+$/.test(first);
-            const lang = isLang ? first : '';
-            const codeText = isLang ? lines.slice(1).join('\n') : part;
+            const lang = isLang ? first : detectLanguage(part);
+            const codeText = isLang ? lines.slice(1).join("\n") : part;
 
             return (
                 <pre className="code_block" key={idx}>
                     <div className="code_header">
-                        <span className="code_lang_label">{lang || 'code'}</span>
+                        <span className="code_lang_label">{lang}</span>
                         <button
                             type="button"
                             className="code_copy_btn"
@@ -53,12 +71,8 @@ const renderRichText = (text, onCopyCode) => {
             );
         }
 
-        // 짝수 index: 일반 텍스트
-        return (
-            <div className="text_block" key={idx}>
-                {part}
-            </div>
-        );
+        // 일반 텍스트
+        return <div className="text_block" key={idx}>{part}</div>;
     });
 };
 
@@ -69,6 +83,7 @@ const ChatRoom = () => {
     const location = useLocation();
     const scrollRef = useRef(null);
     const textareaRef = useRef(null);
+    const { scrollAreaRef } = useOutletContext();
 
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
@@ -116,7 +131,7 @@ const ChatRoom = () => {
 
     // 스크롤 상태 감지 (맨 아래 여부)
     useEffect(() => {
-        const el = scrollRef.current;
+        const el = scrollAreaRef.current;
         if (!el) return;
 
         const handleScroll = () => {
@@ -130,9 +145,9 @@ const ChatRoom = () => {
 
     // 스크롤 맨 아래로
     const scrollToBottom = () => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTo({
-                top: scrollRef.current.scrollHeight,
+        if (scrollAreaRef.current) {
+            scrollAreaRef.current.scrollTo({
+                top: scrollAreaRef.current.scrollHeight,
                 behavior: "smooth"
             });
         }
@@ -175,6 +190,16 @@ const ChatRoom = () => {
                 role: m.role === 'user' ? 'user' : 'assistant',
                 content: m.content,
             }));
+    };
+
+    // 이미지 감지
+    const isImageFileName = (text) => {
+        return /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(text);
+    };
+
+    // 파일 다운로드
+    const isNormalFile = (filename) => {
+        return /\.(pdf|hwp|docx?|xlsx?|zip|txt)$/i.test(filename);
     };
 
     // AI 답변 스트리밍 효과
@@ -413,10 +438,8 @@ const ChatRoom = () => {
         if (!currentChats || currentChats.length === 0) {
             return <div className="empty_state">채팅 기록이 없습니다.</div>;
         }
-
         return currentChats.map((chat, index) => {
             const link = !chat.loading ? extractFirstUrl(chat.content) : null;
-
             return (
                 <div
                     key={index}
@@ -427,17 +450,42 @@ const ChatRoom = () => {
                             <TypingDots />
                         ) : (
                             <>
-                                {renderRichText(chat.content, handleCopy)}
-                                {link && (
-                                    <a
-                                        className="chat_link_btn"
-                                        href={link}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        바로가기
-                                    </a>
+                                {/* 1) 이미지 파일 */}
+                                {isImageFileName(chat.content.trim()) && (
+                                    <img
+                                        src={chat.content.trim()}
+                                        alt="업로드 이미지"
+                                        className="chat_image_preview"
+                                        onClick={() => setPreviewImage(chat.content.trim())}
+                                    />
                                 )}
+
+                                {/* 2) 일반 파일 다운로드 */}
+                                {isNormalFile(chat.content.trim()) && (
+                                    <div className="file_download_wrap">
+                                        <span className="file_name">{chat.content.trim()}</span>
+                                        <a
+                                            href={chat.content.trim()}
+                                            download
+                                            className="file_download_btn"
+                                        >
+                                            다운로드
+                                        </a>
+                                    </div>
+                                )}
+
+                                {/* 3) 그 외: 일반 텍스트 + 코드블럭 */}
+                                {!isImageFileName(chat.content.trim()) &&
+                                    !isNormalFile(chat.content.trim()) && (
+                                        <>
+                                            {renderRichText(chat.content, handleCopy)}
+                                            {link && (
+                                                <a className="chat_link_btn" href={link} target="_blank">
+                                                    바로가기
+                                                </a>
+                                            )}
+                                        </>
+                                    )}
                             </>
                         )}
                     </div>
@@ -450,21 +498,20 @@ const ChatRoom = () => {
         <section className="section_wrap">
             <div className="ChatRoom_body_wrap">
                 <div className="chat_summary_fixed">
+                    <button
+                        type="button"
+                        onClick={handleSummarize}
+                        disabled={loading || !currentChats || currentChats.length === 0}>
+                        📝 대화 요약
+                    </button>
+                </div>
+                <div className="chat_container">
                     {showScrollDown && (
                         <button className="scroll_down_btn" onClick={scrollToBottom}>
                             <span className="material-symbols-outlined">arrow_downward</span>
                         </button>
                     )}
-                </div>
-                <div className="chat_container">
-                    {/* 상단 툴바 - 대화 요약 버튼 */}
                     <div className="chat_toolbar">
-                        <button
-                            type="button"
-                            onClick={handleSummarize}
-                            disabled={loading || !currentChats || currentChats.length === 0}>
-                            📝 대화 요약
-                        </button>
                     </div>
                     {/* 대화 기록 */}
                     <div className="chat_history_wrap" ref={scrollRef}>
@@ -583,6 +630,7 @@ const ChatRoom = () => {
                     </div>
                 </div>
             )}
+
         </section>
     );
 };
